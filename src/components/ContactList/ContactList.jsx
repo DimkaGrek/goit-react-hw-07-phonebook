@@ -1,8 +1,9 @@
 import React from 'react';
 import s from './ContactList.module.css';
 import { useDispatch, useSelector } from 'react-redux';
-import { deleteContact, selectContacts } from '../../redux/contactSlice';
+import { selectContacts } from '../../redux/contactSlice';
 import { selectFilter } from '../../redux/filterSlice';
+import { deleteContact } from '../../redux/operations';
 
 const ContactList = () => {
   const contacts = useSelector(selectContacts);
@@ -18,9 +19,14 @@ const ContactList = () => {
 
   const filteredContacts = getFilteredContacts();
 
+  const getSortedContacts = filterContacts => {
+    return filterContacts.sort((a, b) => b.id - a.id);
+  };
+  const sortedContacts = getSortedContacts(filteredContacts);
+
   return (
     <ul className={s.list}>
-      {filteredContacts.map(({ id, name, phone }) => (
+      {sortedContacts.map(({ id, name, phone }) => (
         <li key={id} className={s.item}>
           {name} : {phone}
           <button className={s.btn} onClick={() => dispatch(deleteContact(id))}>

@@ -1,33 +1,66 @@
-import { createSlice, nanoid } from '@reduxjs/toolkit';
+import { createSlice, isAnyOf } from '@reduxjs/toolkit';
+import { fetchContacts, addContact, deleteContact } from './operations';
+
+const initialState = {
+  contacts: [],
+  isLoading: false,
+  error: null,
+};
 
 const contactSlice = createSlice({
   name: 'contacts',
-  initialState: [],
-  reducers: {
-    addContact: {
-      reducer(state, action) {
-        state.push(action.payload);
-      },
-      prepare(name, phone) {
-        return {
-          payload: {
-            name,
-            phone,
-            id: nanoid(),
-          },
-        };
-      },
-    },
-    deleteContact(state, action) {
-      return state.filter(item => item.id !== action.payload);
-    },
-  },
+  initialState,
+  extraReducers: builder =>
+    builder
+      .addCase(fetchContacts.fulfilled, (state, action) => {
+        state.contacts = action.payload;
+      })
+      .addCase(addContact.fulfilled, (state, action) => {
+        state.contacts.push(action.payload);
+      })
+      .addCase(deleteContact.fulfilled, (state, action) => {
+        state.contacts = state.contacts.filter(
+          item => item.id !== action.payload.id
+        );
+      })
+      .addMatcher(
+        isAnyOf(
+          fetchContacts.rejected,
+          addContact.rejected,
+          deleteContact.rejected
+        ),
+        (state, action) => {
+          state.error = action.payload;
+        }
+      )
+      .addMatcher(
+        isAnyOf(
+          fetchContacts.pending,
+          addContact.pending,
+          deleteContact.pending
+        ),
+        (state, action) => {
+          state.isLoading = true;
+        }
+      )
+      .addMatcher(
+        isAnyOf(
+          fetchContacts.fulfilled,
+          addContact.fulfilled,
+          deleteContact.fulfilled
+        ),
+        (state, action) => {
+          state.isLoading = false;
+        }
+      ),
   selectors: {
-    selectContacts: state => state,
+    selectContacts: state => state.contacts,
+    selectIsLoading: state => state.isLoading,
+    selectIsError: state => state.error,
   },
 });
 
-export const { addContact, deleteContact } = contactSlice.actions;
-export const { selectContacts } = contactSlice.selectors;
+export const { selectContacts, selectIsLoading, selectIsError } =
+  contactSlice.selectors;
 
 export const contactSliceReducer = contactSlice.reducer;
